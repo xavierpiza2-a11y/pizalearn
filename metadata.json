@@ -1,0 +1,6 @@
+{
+  "name": "PizaLearn - Révise Facile & Mini-Jeux IA",
+  "description": "Application EdTech d'apprentissage ludique pour collégiens et lycéens : analyse de cours par photo (OCR + IA), mini-jeux interactifs, profils élèves, sécurité globale et supervision parent/prof.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
