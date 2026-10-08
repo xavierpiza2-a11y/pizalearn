@@ -195,7 +195,7 @@ app.post('/api/courses/analyze', checkGatekeeper, upload.array('photos', 6), asy
       savedUrls.push(`/uploads/${filename}`);
     }
 
-    // 3. Multimodal AI Analysis with Gemini
+    // 3. Multimodal AI Analysis with Gemini, Claude or OpenAI
     const config = db.getConfig();
     const analysisResult = await analyzeCourseImages({
       files: files.map(f => ({
@@ -207,6 +207,7 @@ app.post('/api/courses/analyze', checkGatekeeper, upload.array('photos', 6), asy
       userSubject: subject,
       gradeLevel: gradeLevel,
       modelName: config.aiModel,
+      provider: config.aiProvider,
     });
 
     const newCourse: Course = {
@@ -238,6 +239,12 @@ app.post('/api/courses/analyze', checkGatekeeper, upload.array('photos', 6), asy
     });
   } catch (error: any) {
     console.error('Course analysis error:', error);
+    const msg = (error?.message || '').toLowerCase();
+    if (msg.includes('503') || msg.includes('saturation') || msg.includes('high demand') || msg.includes('unavailable')) {
+      return res.status(503).json({
+        error: "Les serveurs d'IA Google connaissent un pic d'affluence temporaire (Erreur 503). Plusieurs tentatives automatiques ont été effectuées. Veuillez patienter 1 à 2 minutes avant de relancer l'analyse.",
+      });
+    }
     return res.status(500).json({
       error: error?.message || 'Erreur lors de l\'analyse du cours. Vérifiez la clé API ou la clarté de la photo.',
     });
@@ -277,6 +284,7 @@ app.post('/api/courses/:id/generate-quiz', checkGatekeeper, async (req, res) => 
           formats: requestedFormats,
           count: needed,
           modelName: config.aiModel,
+          provider: config.aiProvider,
         });
 
         const combined = [...matchedQuestions, ...extraQuestions].sort(() => 0.5 - Math.random());
@@ -437,8 +445,8 @@ app.get('/api/admin/config', checkGatekeeper, (req, res) => {
 });
 
 app.post('/api/admin/config', checkGatekeeper, checkAdmin, (req, res) => {
-  const { aiModel } = req.body;
-  const updated = db.updateConfig({ aiModel });
+  const { aiModel, aiProvider } = req.body;
+  const updated = db.updateConfig({ aiModel, aiProvider });
   res.json(updated);
 });
 

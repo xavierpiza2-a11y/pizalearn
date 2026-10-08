@@ -89,9 +89,15 @@ export interface QuizSessionResult {
   createdAt: string;
 }
 
+export type AIProvider = 'gemini' | 'anthropic' | 'openai';
+
 export interface AppConfig {
   aiModel: string;
+  aiProvider: AIProvider;
   hasApiKey: boolean;
+  hasGeminiKey: boolean;
+  hasAnthropicKey: boolean;
+  hasOpenAiKey: boolean;
   totalApiCalls: number;
   totalCacheHits: number;
   totalTokensSaved: number;

@@ -189,7 +189,7 @@ export const api = {
   // Admin supervision & Config
   getAdminStats: () => request<AdminStats>('/api/admin/stats'),
   getConfig: () => request<AppConfig>('/api/admin/config'),
-  updateConfig: (data: { aiModel: string }) =>
+  updateConfig: (data: Partial<{ aiModel: string; aiProvider: import('../types/index.js').AIProvider }>) =>
     request<AppConfig>('/api/admin/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

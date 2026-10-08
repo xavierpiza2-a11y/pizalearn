@@ -13,7 +13,12 @@ Application web EdTech full-stack, auto-hébergée (self-hosted) et responsive p
 
 ---
 
-## 🤖 2. Où et comment configurer la Clé API de l'IA
+## 🤖 2. Choix de l'IA & Configuration des Clés API (Gemini, Claude, OpenAI)
+
+PizaLearn est **multi-fournisseurs** ! Vous pouvez utiliser au choix :
+- **Google Gemini** (Gemini 3.8 Flash, Gemini 3.1 Flash-Lite) — *Recommandé, gratuit sur AI Studio.*
+- **Anthropic Claude** (Claude 3.5 Sonnet, Claude 3.5 Haiku) — *Excellente analyse multimodale et pédagogique.*
+- **OpenAI** (GPT-4o, GPT-4o-mini) — *Vision multimodale performante.*
 
 ### 📍 Quel fichier modifier ?
 Le fichier à configurer est le fichier **`.env`** situé **à la racine du dossier de l'application** :
@@ -21,18 +26,30 @@ Le fichier à configurer est le fichier **`.env`** situé **à la racine du doss
 /chemin/vers/pizalearn/.env
 ```
 
-### 📝 Où mettre la clé exactement ?
-Ouvrez le fichier `.env` avec un éditeur de texte (ex: `nano .env`) et renseignez votre clé sur la ligne suivante :
+### 📝 Configuration selon votre IA préférée :
+Ouvrez le fichier `.env` avec un éditeur (ex: `nano .env`) et ajoutez la clé correspondant à l'IA que vous souhaitez utiliser :
+
 ```env
-# Clé API Google Gemini pour l'OCR et la génération des quiz
-GEMINI_API_KEY="AIzaSyVotreCleApiReelleIci"
+# Option 1 : Google Gemini (Gratuit)
+GEMINI_API_KEY="AIzaSyVotreCleGoogleIci"
+
+# Option 2 : Anthropic Claude (Claude 3.5 Sonnet / Haiku)
+ANTHROPIC_API_KEY="sk-ant-api03-VotreCleClaudeIci"
+
+# Option 3 : OpenAI (GPT-4o / GPT-4o-mini)
+OPENAI_API_KEY="sk-proj-VotreCleOpenAiIci"
 ```
 
-> **Comment obtenir une clé gratuitement ?**
+> **Comment obtenir une clé Claude (Anthropic) ?**
+> 1. Créez un compte sur la console [Anthropic Console](https://console.anthropic.com/).
+> 2. Rendez-vous dans **API Keys** > **Create Key**.
+> 3. Copiez la clé (`sk-ant-api03-...`) et collez-la dans votre fichier `.env` sur la ligne `ANTHROPIC_API_KEY`.
+> 4. Dans l'espace Superviseur de PizaLearn, activez simplement **Anthropic Claude** en 1 clic !
+
+> **Comment obtenir une clé Google Gemini (Gratuite) ?**
 > 1. Rendez-vous sur [Google AI Studio](https://aistudio.google.com/app/apikey).
-> 2. Connectez-vous avec votre compte Google.
-> 3. Cliquez sur **"Create API Key"** et copiez la clé générée (commence par `AIzaSy...`).
-> 4. Collez-la entre les guillemets dans votre fichier `.env`.
+> 2. Connectez-vous avec votre compte Google et cliquez sur **"Create API Key"**.
+> 3. Collez la clé commençant par `AIzaSy...` sur la ligne `GEMINI_API_KEY`.
 
 *(Note : Même sans clé configurée immédiatement, l'application fonctionne avec les cours exemples pré-enregistrés en local).*
 
@@ -233,3 +250,24 @@ docker compose down
 git pull
 docker compose up -d --build
 ```
+
+---
+
+## ⚡ 5. Résolution de l'Erreur 503 ("This model is currently experiencing high demand")
+
+Si vous rencontrez ce message lors de l'analyse :
+```text
+"error": {"code": 503, "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.", "status": "UNAVAILABLE"}
+```
+
+### Pourquoi cela arrive ?
+Cette erreur 503 est un pic d'affluence temporaire sur les serveurs de calcul de Google (trop de requêtes mondiales simultanées sur un modèle précis à un instant T).
+
+### Comment PizaLearn gère cela automatiquement :
+1. **Nouvelles tentatives automatiques (Retry) :** Le backend patiente 1,5 à 3 secondes et réessaie automatiquement 2 fois.
+2. **Bascule de secours (Fallback automatique) :** Si `gemini-3.8-flash` reste saturé, l'application bascule automatiquement et de manière transparente sur `gemini-3.1-flash-lite` ou `gemini-flash-latest`.
+3. **Sélection manuelle dans l'Espace Superviseur :**  
+   Dans l'onglet **"Superviseur"** > **"Modèles IA & Sauvegarde"**, vous pouvez également choisir directement le modèle de votre choix.
+4. **Cache Local SHA-256 :**  
+   Toute photo ou cours déjà analysé est stocké dans `./data/db.json` et ne refait JAMAIS d'appel réseau à Google (0 risque d'erreur 503 pour les révisions de cours déjà enregistrés).
+

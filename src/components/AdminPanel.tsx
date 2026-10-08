@@ -250,7 +250,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     reader.readAsText(file);
   };
 
-  // Model switch
+  // Provider and Model switch
+  const handleSwitchProvider = async (provider: 'gemini' | 'anthropic' | 'openai') => {
+    let defaultModel = 'gemini-3.8-flash';
+    if (provider === 'anthropic') defaultModel = 'claude-3-5-sonnet-20241022';
+    if (provider === 'openai') defaultModel = 'gpt-4o';
+    try {
+      const updated = await api.updateConfig({ aiProvider: provider, aiModel: defaultModel });
+      setConfig(updated);
+      playClickSound();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSwitchModel = async (newModel: string) => {
     try {
       const updated = await api.updateConfig({ aiModel: newModel });
@@ -689,9 +702,63 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               Configuration de l'IA Multimodale
             </h3>
             <p className="text-xs text-slate-400">
-              Modèle actif pour l'OCR, la transcription et la synthèse pédagogique.
+              Choisissez le fournisseur d'IA de votre choix (Google Gemini, Anthropic Claude ou OpenAI).
             </p>
 
+            {/* Provider Selector Pills */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Fournisseur actif
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchProvider('gemini')}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    config.aiProvider === 'gemini'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>Google Gemini</span>
+                  <span className={`text-[10px] font-normal ${config.hasGeminiKey ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {config.hasGeminiKey ? '✓ Clé active' : 'Sans clé'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSwitchProvider('anthropic')}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    config.aiProvider === 'anthropic'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                      : 'bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>Anthropic Claude</span>
+                  <span className={`text-[10px] font-normal ${config.hasAnthropicKey ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {config.hasAnthropicKey ? '✓ Clé active' : 'Sans clé'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSwitchProvider('openai')}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    config.aiProvider === 'openai'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                      : 'bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>OpenAI</span>
+                  <span className={`text-[10px] font-normal ${config.hasOpenAiKey ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {config.hasOpenAiKey ? '✓ Clé active' : 'Sans clé'}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Model Selector depending on Provider */}
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -702,23 +769,60 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   onChange={(e) => handleSwitchModel(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs cursor-pointer"
                 >
-                  <option value="gemini-3.8-flash">Google Gemini 3.8 Flash (Recommandé • Ultra-rapide & précis)</option>
-                  <option value="gemini-3.1-pro-preview">Google Gemini 3.1 Pro (Raisonnement STEM avancé)</option>
+                  {config.aiProvider === 'gemini' && (
+                    <>
+                      <option value="gemini-3.8-flash">Google Gemini 3.8 Flash (Recommandé • Précis & Rapide)</option>
+                      <option value="gemini-3.1-flash-lite">Google Gemini 3.1 Flash-Lite (Haute disponibilité & anti-saturation)</option>
+                      <option value="gemini-flash-latest">Google Gemini Flash Latest (Version stable)</option>
+                      <option value="gemini-3.1-pro-preview">Google Gemini 3.1 Pro (Raisonnement STEM avancé)</option>
+                    </>
+                  )}
+
+                  {config.aiProvider === 'anthropic' && (
+                    <>
+                      <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Qualité supérieure • Recommandé)</option>
+                      <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Ultra rapide & économique)</option>
+                    </>
+                  )}
+
+                  {config.aiProvider === 'openai' && (
+                    <>
+                      <option value="gpt-4o">OpenAI GPT-4o (Vision multimodal phare)</option>
+                      <option value="gpt-4o-mini">OpenAI GPT-4o Mini (Rapide & léger)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs space-y-1.5">
-                <span className="font-semibold text-slate-300 block">Statut de la clé API :</span>
-                <span className={`inline-flex items-center gap-1 font-bold ${config.hasApiKey ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {config.hasApiKey ? '✓ Clé API active côté serveur' : '⚠️ Clé absente (Mode démo actif)'}
-                </span>
+              {/* Status and Keys explanation */}
+              <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-300">Statut du fournisseur :</span>
+                  <span className={`inline-flex items-center gap-1 font-bold ${
+                    (config.aiProvider === 'gemini' && config.hasGeminiKey) ||
+                    (config.aiProvider === 'anthropic' && config.hasAnthropicKey) ||
+                    (config.aiProvider === 'openai' && config.hasOpenAiKey)
+                      ? 'text-emerald-400'
+                      : 'text-amber-400'
+                  }`}>
+                    {(config.aiProvider === 'gemini' && config.hasGeminiKey) ||
+                    (config.aiProvider === 'anthropic' && config.hasAnthropicKey) ||
+                    (config.aiProvider === 'openai' && config.hasOpenAiKey)
+                      ? '✓ Clé API active'
+                      : '⚠️ Clé absente pour ce fournisseur'}
+                  </span>
+                </div>
+
                 <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-800/80 space-y-1">
-                  <p className="font-semibold text-slate-300">Où renseigner votre clé API :</p>
-                  <p>Dans le fichier <code>.env</code> à la racine de l'application :</p>
-                  <code className="block bg-slate-950 p-2 rounded-lg text-indigo-300 font-mono text-[10px]">
-                    GEMINI_API_KEY="AIzaSy..."
+                  <p className="font-semibold text-slate-300">Variables dans votre fichier <code>.env</code> :</p>
+                  <code className="block bg-slate-950 p-2 rounded-lg text-indigo-300 font-mono text-[10px] space-y-1">
+                    <div># Google Gemini :</div>
+                    <div>GEMINI_API_KEY="AIzaSy..."</div>
+                    <div className="pt-1"># Anthropic Claude :</div>
+                    <div>ANTHROPIC_API_KEY="sk-ant-api03-..."</div>
+                    <div className="pt-1"># OpenAI :</div>
+                    <div>OPENAI_API_KEY="sk-proj-..."</div>
                   </code>
-                  <p className="text-slate-500 text-[10px]">Ou dans votre variable d'environnement Docker.</p>
                 </div>
               </div>
             </div>

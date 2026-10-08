@@ -21,6 +21,7 @@ export interface DatabaseSchema {
   sessions: QuizSessionResult[];
   config: {
     aiModel: string;
+    aiProvider?: 'gemini' | 'anthropic' | 'openai';
     totalApiCalls: number;
     totalCacheHits: number;
     totalTokensSaved: number;
@@ -686,12 +687,30 @@ class Database {
 
   // --- Config ---
   public getConfig(): AppConfig {
+    const hasGeminiKey = !!process.env.GEMINI_API_KEY;
+    const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY;
+    const hasOpenAiKey = !!process.env.OPENAI_API_KEY;
+    const hasApiKey = hasGeminiKey || hasAnthropicKey || hasOpenAiKey;
+
+    let defaultProvider: 'gemini' | 'anthropic' | 'openai' = 'gemini';
+    if (this.data.config.aiProvider) {
+      defaultProvider = this.data.config.aiProvider;
+    } else if (hasAnthropicKey && !hasGeminiKey) {
+      defaultProvider = 'anthropic';
+    } else if (hasOpenAiKey && !hasGeminiKey) {
+      defaultProvider = 'openai';
+    }
+
     return {
-      aiModel: this.data.config.aiModel || 'gemini-3.8-flash',
-      hasApiKey: !!process.env.GEMINI_API_KEY,
+      aiModel: this.data.config.aiModel || (defaultProvider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : defaultProvider === 'openai' ? 'gpt-4o' : 'gemini-3.8-flash'),
+      aiProvider: defaultProvider,
+      hasApiKey,
+      hasGeminiKey,
+      hasAnthropicKey,
+      hasOpenAiKey,
       totalApiCalls: this.data.config.totalApiCalls,
       totalCacheHits: this.data.config.totalCacheHits,
-      totalTokensSaved: this.data.config.totalTokensSaved
+      totalTokensSaved: this.data.config.totalTokensSaved,
     };
   }
 
@@ -704,9 +723,12 @@ class Database {
     this.saveData(this.data);
   }
 
-  public updateConfig(updates: Partial<{ aiModel: string }>) {
+  public updateConfig(updates: Partial<{ aiModel: string; aiProvider: 'gemini' | 'anthropic' | 'openai' }>) {
     if (updates.aiModel) {
       this.data.config.aiModel = updates.aiModel;
+    }
+    if (updates.aiProvider) {
+      this.data.config.aiProvider = updates.aiProvider;
     }
     this.saveData(this.data);
     return this.getConfig();
